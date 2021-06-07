@@ -1,0 +1,8 @@
+<?xml version="1.0" ?>
+<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><title/>
+  <g data-name="menu" id="menu_" fill="#f0f0f0" transform="rotate(90) translate(-1,-30)">
+    <path d="M29,6H3A1,1,0,0,0,3,8H29a1,1,0,0,0,0-2Z"/>
+    <path d="M3,18H18a1,1,0,0,0,0-2H3a1,1,0,0,0,0,2Z"/>
+    <path d="M25,24H3a1,1,0,0,0,0,2H25a1,1,0,0,0,0-2Z"/>
+  </g>
+</svg>
