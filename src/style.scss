@@ -335,7 +335,7 @@
   padding: 0 4px;
   width: 264px;
   height: 40px;
-  background-color: hsla(0,0%,100%,.24);
+  background-color: hsla(0,0%,100%,0.24);
   border-radius: 4px;
   color: white;
   font-size: 14px;
@@ -347,7 +347,7 @@
   }
 
   &:hover {
-    background-color: hsla(0,0%,100%,.32);
+    background-color: hsla(0,0%,100%,0.32);
   }
 }
 
@@ -393,7 +393,7 @@
   border-radius: 4px;
 
   &:hover {
-    background-color: rgba(9,30,66,.08);
+    background-color: rgba(9,30,66,0.08);
   }
 }
 
@@ -416,7 +416,7 @@
   height: 28px;
 
   &:hover {
-    background-color: rgba(9,30,66,.08);
+    background-color: rgba(9,30,66,0.08);
   }
 }
 
