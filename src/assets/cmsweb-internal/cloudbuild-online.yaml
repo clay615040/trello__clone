@@ -1,0 +1,86 @@
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  id: Build
+  args: 
+  - 'build'
+  - '--build-arg'
+  - 'VENV=${_CMS_ENV}'
+  - '--build-arg' 
+  - 'VERSION=$TAG_NAME'
+  - '-t'
+  - 'gcr.io/audere-cms-stage/cmsweb-internal:$TAG_NAME'
+  - '.'
+  
+- name: gcr.io/cloud-builders/git
+  id: "Retrieve Git message"
+  args: ['fetch', '--no-tags', '--depth', '100']
+  waitFor: ['-']
+
+- name: 'gcr.io/cloud-builders/docker'
+  id: Push
+  args: 
+  - 'push'
+  - 'gcr.io/audere-cms-stage/cmsweb-internal:$TAG_NAME'
+
+- name: 'gcr.io/cloud-builders/kubectl'
+  id: Apply
+  args:
+  - set
+  - image
+  - deployment
+  - cmsweb-internal-deployment
+  - cmsweb-internal-container=gcr.io/audere-cms-stage/cmsweb-internal:$TAG_NAME
+  env:
+  - CLOUDSDK_CORE_PROJECT=audere-cms-online
+  - CLOUDSDK_COMPUTE_ZONE=asia-east2
+  - CLOUDSDK_CONTAINER_CLUSTER=audere-cms-cluster
+  
+- name: 'gcr.io/cloud-builders/kubectl'
+  id: "Wait for apply"
+  args:
+  - rollout
+  - status 
+  - deployment 
+  - cmsweb-internal-deployment
+  - --timeout=300s
+  env:
+  - CLOUDSDK_CORE_PROJECT=audere-cms-online
+  - CLOUDSDK_COMPUTE_ZONE=asia-east2
+  - CLOUDSDK_CONTAINER_CLUSTER=audere-cms-cluster
+  timeout: 310s
+
+- name: 'gcr.io/cloud-builders/gcloud-slim'
+  id: "Submit Google Sheet"
+  entrypoint: bash
+  args:
+    - -c
+    - |
+      _GIT_LAST_COMMIT=$(gcloud builds list --filter "status='SUCCESS' AND source.repo_source.repo_name='$REPO_NAME' AND (source.repo_source.tag_name~'^online' OR substitutions.TAG_NAME~^online)" --format="value(sourceProvenance.resolvedRepoSource.commitSha)" | head -n 1)
+      _GIT_LAST_COMMIT=${_GIT_LAST_COMMIT:=$COMMIT_SHA}
+      _GIT_LAST_COMMIT_COUNT=$(git rev-list --count $$_GIT_LAST_COMMIT)
+      _GIT_CURRENT_COMMIT_COUNT=$(git rev-list --count $COMMIT_SHA)
+      _GIT_COMMIT_LOG_COUNT=$(($$_GIT_CURRENT_COMMIT_COUNT-$$_GIT_LAST_COMMIT_COUNT))
+      _GIT_COMMIT_LOG_COUNT=$(($$_GIT_COMMIT_LOG_COUNT<=0?1:$$_GIT_COMMIT_LOG_COUNT))
+      _GIT_USER=$(git log -n 1 --pretty=format:"%an")
+      _GIT_MESSAGE=$(git log --pretty=format:"%B" -n $$_GIT_COMMIT_LOG_COUNT | sed '/Merge branch/d;/cherry picked from commit/d;/^$/d' | sed -z 's/\n$//' | base64 -w 0)
+      curl "https://notify.dev.aug888.com/webhook/sheet" \
+      -s -H "Accept: application/json" \
+      -H "Content-Type:application/json" \
+      -d "$(cat <<EOF
+      {
+        "project": "$PROJECT_ID",
+        "env": "$_CMS_ENV",
+        "repo": "$REPO_NAME",
+        "user": "$$_GIT_USER",
+        "message": "$$_GIT_MESSAGE",
+        "version": "$TAG_NAME",
+        "doneAt": $(date +%s),
+        "client": "v1"
+      }
+      EOF
+      )"
+      exit 0
+  waitFor: ['Retrieve Git message', "Wait for apply"]
+  
+substitutions:
+  _CMS_ENV: online

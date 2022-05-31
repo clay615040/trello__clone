@@ -1,0 +1,39 @@
+@import './app';
+
+.dynamic-tables {
+  #vueWayTable {
+    th {
+      font-size: $font-size-sm;
+
+      &:after {
+        color: $gray-200;
+      }
+    }
+
+    .btn-default {
+      background: none;
+      border: none;
+      box-shadow: none;
+    }
+  }
+}
+
+.VueTables__table.table {
+  tr {
+    th {
+      background: $primary;
+      color: var(--light-color);
+      border: none;
+    }
+  }
+
+  .VueTables__sortable {
+    .VueTables__sort-icon {
+      margin-top: 3px;
+
+      &:before {
+        color: var(--light-color);
+      }
+    }
+  }
+}

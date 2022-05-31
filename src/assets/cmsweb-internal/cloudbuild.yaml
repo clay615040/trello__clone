@@ -1,0 +1,47 @@
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  id: Build
+  args:
+  - 'build'
+  - '--build-arg' 
+  - 'VENV=$_CMS_ENV'
+  - '--build-arg' 
+  - 'VERSION=$_IMAGE_VERSION'
+  - '-t'
+  - 'gcr.io/audere-cms-stage/gamer-frontend:$_IMAGE_VERSION'
+  - '.'
+  
+- name: 'gcr.io/cloud-builders/gcloud-slim'
+  id: Clone deploy repository
+  entrypoint: /bin/sh
+  args:
+  - '-c'
+  - |
+    git clone https://source.developers.google.com/p/audere-cms-stage/r/infra --single-branch -b $REPO_NAME && \
+    cd infra && \
+    git config user.email $(gcloud auth list --filter=status:ACTIVE --format='value(account)') && \
+    git config user.name "Cloud Build Bot"
+
+- name: 'gcr.io/cloud-builders/gcloud-slim'
+  id: Patch manifest
+  entrypoint: /bin/sh
+  args:
+  - '-c'
+  - |
+    sed -i "s|\(newTag:\s*\)\(.*\)|\1\"$_IMAGE_VERSION\"|" infra/kubernetes/gamer/frontend/overlays/$_CMS_ENV/kustomization.yaml
+
+- name: 'gcr.io/cloud-builders/gcloud-slim'
+  id: Push manifest
+  entrypoint: /bin/sh
+  args:
+  - '-c'
+  - |
+    set -xe
+    cd infra
+    git add -A
+    git commit -m "Deploying image gcr.io/audere-cms-stage/gamer-frontend:$_IMAGE_VERSION
+    Built from commit ${COMMIT_SHA} of repository $REPO_NAME"
+    git push 
+
+images: 
+- 'gcr.io/audere-cms-stage/gamer-frontend:$_IMAGE_VERSION'

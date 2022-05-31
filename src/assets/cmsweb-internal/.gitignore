@@ -1,0 +1,9 @@
+.vscode
+.DS_Store
+html
+source/.DS_Store
+source/dist
+source/node_modules
+source/yarn.lock
+source/src/locales/message.js
+source/src/locales/package/
